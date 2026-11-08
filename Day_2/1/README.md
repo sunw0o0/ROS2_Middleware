@@ -1,5 +1,8 @@
 # 지연과 손실
 
+## 질문
+네트워크에 지연과 손실이 생기면 ROS 2 메시지의 RTT(평균, p95)와 손실률은 어떻게 변하고, QoS(reliable / best_effort)에 따라 어떻게 달라지는가?
+
 #### 1. 설정 & 기본값
 
 컴퓨터 1대. 즉 터미널 2개를 열고 두 터미널 사이에서 통신하는 환경으로 실험을 하였다.
@@ -93,3 +96,11 @@ depth를 키우면 재전송할 원본이 남아 있게 되지만, reliable은 �
    <img width="676" height="117" alt="Screenshot from 2026-11-08 16-16-09" src="https://github.com/user-attachments/assets/9ba984cd-4232-478b-8be3-cac0f4e0beeb" />
 
    reliavle과 best_effort를 비교했을 때, loss값은 10% -> 12.5%로 증가한 것을 알 수 있고, RTT 평균은 400ms에서 200ms로 감소한 것을 알 수 있고 p95값도 1000ms -> 232.8ms인 것을 알 수 있다. 확실히 reliavle보다 best_effort가 데이터 손실은 많지만 더 빠르게 데이터를 전달할 수 있다는 장점이 있는 것 같다. 
+
+## 결론
+같은 지연(100ms ± 20ms)과 손실(5%) 조건에서 reliable은 평균 407ms, p95 1036ms였고, best_effort는 평균 202.7ms, p95 232.8ms였다. best_effort의 평균이 netem이 건 왕복 지연(약 200ms)과 거의 같으므로, reliable에서 늘어난 200ms 이상은 재전송과 순서대로 전달하기 위한 대기 시간이었다.
+손실은 best_effort(12.5%)가 reliable(10.0%)보다 조금 많았다. 또 reliable도 depth와 대기 시간을 늘리면 손실은 1.5%까지 줄었지만, 평균 2초, p95 5초로 지연이 크게 늘었다. 즉 손실과 지연은 서로 맞바꾸는 관계이다.
+따라서 라이다처럼 최신 값이 중요한 센서는 best_effort가 적합하고, 빠지면 안 되는 명령은 reliable이 적합하다. 다만 지연이 큰 환경에서는 reliable 명령도 수 초 늦게 도착할 수 있으므로, 오래된 명령을 버리는 lifespan 같은 설정을 함께 고려해야 한다.
+
+## 아직 모르는 것
+depth=100, 대기 10초에서도 손실 1.5%가 남은 이유를 모르겠다.
